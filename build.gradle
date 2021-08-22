@@ -1,0 +1,52 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.8
+group = 'kd.lzp'
+version = '1.0'
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+// 苍穹框架包
+def trd = '../../../mservice-cosmic/lib/trd'
+def bos = '../../../mservice-cosmic/lib/bos'
+def biz = '../../../mservice-cosmic/lib/biz'
+// 第三方包
+def cus = '../../../mservice-cosmic/lib/cus'
+// gradle
+def wrapper = './gradle/wrapper'
+
+repositories {
+    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+    mavenCentral()
+}
+// 依赖
+dependencies {
+    implementation fileTree(dir: bos, include: '*.jar')
+    implementation fileTree(dir: trd, include: '*.jar')
+    implementation fileTree(dir: biz, include: '*.jar')
+    implementation fileTree(dir: cus, include: '*.jar')
+    implementation fileTree(dir: wrapper, include: '*.*')
+    implementation 'cn.hutool:hutool-all:5.7.9'
+    implementation 'com.github.adedayo.intellij.sdk:java-decompiler-engine:142.1'
+    implementation 'org.jd:jd-core:1.1.3'
+}
+
+// 定义任务
+task sourcesJar(group: 'lzp', type: Jar, dependsOn: build) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+// 定义任务
+task copyJarTodir(group: 'lzp', type: Copy) {
+    from 'build/libs'
+    into '/home/local/bos'
+    exclude '**/*.class'
+}
+
+test.ignoreFailures true
+

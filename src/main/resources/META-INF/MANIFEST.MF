@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Implementation-Title: lzpeng723
+Implementation-Version: 1.0
+Release: 1.0
+Specification-Vendor: https://dev.kingdee.com
+Specification-Title: Kingdee
+Builddate: 20210821151318
+Specification-Version: 4.0
+Created-By: Development Tool
+Build-Jdk: 1.8.0_271
+Implementation-Vendor: https://github.com/lzpeng723
+
