@@ -1,5 +1,7 @@
 package kd.lzp.servicetools.util.decompiler;
 
+import kd.bos.exception.KDBizException;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,17 +16,16 @@ public abstract class AbstractDecompiler implements Decompiler {
     /**
      * 缓存反编译器
      */
-    private static final Map<String, Decompiler> DECOMPILER_MAP = new ConcurrentHashMap();
+    private static final Map<String, Decompiler> DECOMPILER_MAP = new ConcurrentHashMap<>();
 
     /**
      * 构造函数
      */
     public AbstractDecompiler() {
-        Exception e = new Exception();
-        StackTraceElement[] stackTrace = e.getStackTrace();
-        String callClassName = stackTrace[2].getClassName();
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        String callClassName = stackTrace[3].getClassName();
         if (!"sun.reflect.NativeConstructorAccessorImpl".equals(callClassName)) {
-            throw new RuntimeException(String.format("不允许直接 new 对象, 请使用 %s.getInstance(\"%s\") 获取单例对象 !!!", new Object[]{AbstractDecompiler.class.getName(), getClass().getName()}));
+            throw new KDBizException(String.format("不允许直接 new 对象, 请使用 %s.getInstance(\"%s\") 获取单例对象 !!!", new Object[]{AbstractDecompiler.class.getName(), getClass().getName()}));
         }
     }
 

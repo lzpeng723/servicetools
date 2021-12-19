@@ -2,7 +2,9 @@ package kd.lzp.servicetools.servicehelper;
 
 
 import cn.hutool.core.io.ManifestUtil;
+import kd.bos.context.RequestContext;
 import kd.bos.instance.Instance;
+import kd.bos.util.StringUtils;
 import kd.lzp.servicetools.util.AttachmentUtils;
 import kd.lzp.servicetools.util.ClassUtils;
 import kd.lzp.servicetools.util.DecompilerUtils;
@@ -73,12 +75,21 @@ public class ClassServiceImpl implements ClassService {
      */
     @Override
     public Map<String, Object> downloadJarFile(String className) {
-        // 下载jar包
         Map<String, Object> returnMap = getReturnMap();
-        URL locationUrl = ClassUtils.getLocationUrl(className);
-        if (locationUrl != null) {
-            String url = AttachmentUtils.download(null, locationUrl);
+        if (StringUtils.isEmpty(className)) {
+            // 下载全量jar包
+            URL locationUrl = ClassUtils.getLocationUrl(Instance.class);
+            File jarFile = new File(locationUrl.getFile());
+            File mserviceLib = jarFile.getParentFile().getParentFile();
+            String url = AttachmentUtils.download(null, mserviceLib);
             returnMap.put("url", url);
+        } else {
+            // 下载jar包
+            URL locationUrl = ClassUtils.getLocationUrl(className);
+            if (locationUrl != null) {
+                String url = AttachmentUtils.download(null, locationUrl);
+                returnMap.put("url", url);
+            }
         }
         return returnMap;
     }
@@ -149,6 +160,7 @@ public class ClassServiceImpl implements ClassService {
     private Map<String, Object> getReturnMap() {
         Map<String, Object> returnMap = new HashMap<>(4);
         returnMap.put("APP_NAME", Instance.getAppName());
+        returnMap.put("INSTANCE_ID", Instance.getInstanceId());
         try {
             String hostAddress = InetAddress.getLocalHost().getHostAddress();
             returnMap.put("HOST_ADDRESS", hostAddress);

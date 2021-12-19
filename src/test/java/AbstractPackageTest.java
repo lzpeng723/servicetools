@@ -13,10 +13,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -32,20 +29,7 @@ import java.util.stream.Stream;
  */
 public abstract class AbstractPackageTest {
 
-
     /**
-     * 开发环境 ip
-     */
-    private static final String DEV_HOST = "10.220.29.153";
-
-    /**
-     * 测试环境 ip
-     */
-    private static final String UAT_HOST = "10.220.30.233";
-
-    /**
-     * =======
-     * >>>>>>> 初始化代码
      * 当前 classpath 根路径
      */
     private List<File> rootFiles;
@@ -67,6 +51,33 @@ public abstract class AbstractPackageTest {
         String userDir = System.getProperty("user.dir");
         this.rootFiles.add(new File(userDir, "src/main/java"));
         this.rootFiles.add(new File(userDir));
+    }
+
+    /**
+     * 获取 ClassPath 中去除苍穹框架包之后的第三方包路径集合
+     *
+     * @return jar 包路径集合
+     */
+    @NotNull
+    protected List<String> getClassPathJarPath() {
+        try {
+            String classPathStr = System.getProperty("java.class.path");
+            String[] classPaths = classPathStr.split(";");
+            String trdPath = new File("../../../mservice-cosmic/lib/trd").getCanonicalPath();
+            String bosPath = new File("../../../mservice-cosmic/lib/bos").getCanonicalPath();
+            String bizPath = new File("../../../mservice-cosmic/lib/biz").getCanonicalPath();
+            String cusPath = new File("../../../mservice-cosmic/lib/cus").getCanonicalPath();
+            List<String> needPackageJarPath = new ArrayList<>();
+            for (String classPath : classPaths) {
+                if (new File(classPath).isFile() && !classPath.startsWith(trdPath) && !classPath.startsWith(bosPath) && !classPath.startsWith(bizPath) && !classPath.startsWith(cusPath)) {
+                    needPackageJarPath.add(classPath);
+                }
+            }
+            return needPackageJarPath;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -112,6 +123,29 @@ public abstract class AbstractPackageTest {
         return zipFile.getAbsoluteFile();
     }
 
+
+    /**
+     * 获取 Manifest
+     *
+     * @return
+     */
+    protected Manifest genManifest() {
+        Manifest manifest = new Manifest();
+        Attributes mainAttributes = manifest.getMainAttributes();
+        mainAttributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        mainAttributes.put(Attributes.Name.IMPLEMENTATION_TITLE, "lzpeng723");
+        mainAttributes.put(Attributes.Name.IMPLEMENTATION_VENDOR, "https://github.com/lzpeng723");
+        mainAttributes.put(Attributes.Name.IMPLEMENTATION_VERSION, "1.0");
+        mainAttributes.put(Attributes.Name.SPECIFICATION_TITLE, "Kingdee");
+        mainAttributes.put(Attributes.Name.SPECIFICATION_VENDOR, "https://dev.kingdee.com");
+        mainAttributes.put(Attributes.Name.SPECIFICATION_VERSION, "4.0");
+        mainAttributes.put(new Attributes.Name("Created-By"), "Development Tool");
+        mainAttributes.put(new Attributes.Name("Release"), "1.0");
+        mainAttributes.put(new Attributes.Name("Build-Jdk"), System.getProperty("java.version"));
+        mainAttributes.put(new Attributes.Name("Builddate"), getTimeStr());
+        return manifest;
+    }
+
     /**
      * 打成jar包
      * 添加 META-INF/MANIFEST.MF
@@ -122,8 +156,24 @@ public abstract class AbstractPackageTest {
      * @see MetadataAction#getJarInfo(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
     protected File genJar(String jarFilePath, FileFilter fileFilter, String... srcFiles) {
+        return genJar(jarFilePath, null, fileFilter, srcFiles);
+    }
+
+    /**
+     * 打成jar包
+     *
+     * @param jarFilePath 生成jar包的路径
+     * @param manifest    META-INF/MANIFEST.MF 文件信息
+     * @param fileFilter  文件过滤器
+     * @param srcFiles    源文件路径
+     * @see MetadataAction#getJarInfo(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+     */
+    protected File genJar(String jarFilePath, Manifest manifest, FileFilter fileFilter, String... srcFiles) {
         if (fileFilter == null) {
             fileFilter = file -> true;
+        }
+        if (manifest == null) {
+            manifest = genManifest();
         }
         Map<String, InputStream> fileMap = Arrays.stream(srcFiles)
                 .flatMap(this::getStreamByPath)
@@ -132,7 +182,7 @@ public abstract class AbstractPackageTest {
                 .flatMap(Collection::stream)
                 .filter(fileFilter::accept)
                 .collect(Collectors.toMap(this::getFilePathInJar, this::getInputStream));
-        InputStream manifestInputStream = genManifestInputStream();
+        InputStream manifestInputStream = genManifestInputStream(manifest);
         if (manifestInputStream != null) {
             fileMap.put(JarFile.MANIFEST_NAME, manifestInputStream);
         }
@@ -142,6 +192,27 @@ public abstract class AbstractPackageTest {
         ZipUtil.zip(jarFile, paths, inputStreams);
         System.out.println("已生成jar包: " + jarFile.getAbsolutePath());
         return jarFile.getAbsoluteFile();
+    }
+
+    /**
+     * 获得 Manifest 输入流
+     *
+     * @param manifest Manifest 文件
+     * @return
+     */
+    private InputStream genManifestInputStream(Manifest manifest) {
+        if (manifest == null) {
+            return null;
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            manifest.write(baos);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        byte[] bytes = baos.toByteArray();
+        return new ByteArrayInputStream(bytes);
     }
 
     /**
@@ -253,7 +324,8 @@ public abstract class AbstractPackageTest {
     }
 
 
-    /* 部署zip包
+    /**
+     * 部署zip包
      *
      * @param host                主机名
      * @param port                sftp 端口号
@@ -354,36 +426,6 @@ public abstract class AbstractPackageTest {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return emptyInputStream;
-        }
-    }
-
-    /**
-     * 获取 Manifest 输入流
-     *
-     * @return
-     */
-    private InputStream genManifestInputStream() {
-        try {
-            Manifest manifest = new Manifest();
-            Attributes mainAttributes = manifest.getMainAttributes();
-            mainAttributes.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-            mainAttributes.put(Attributes.Name.IMPLEMENTATION_TITLE, "lzpeng723");
-            mainAttributes.put(Attributes.Name.IMPLEMENTATION_VENDOR, "https://github.com/lzpeng723");
-            mainAttributes.put(Attributes.Name.IMPLEMENTATION_VERSION, "1.0");
-            mainAttributes.put(Attributes.Name.SPECIFICATION_TITLE, "Kingdee");
-            mainAttributes.put(Attributes.Name.SPECIFICATION_VENDOR, "https://dev.kingdee.com");
-            mainAttributes.put(Attributes.Name.SPECIFICATION_VERSION, "4.0");
-            mainAttributes.put(new Attributes.Name("Created-By"), "Development Tool");
-            mainAttributes.put(new Attributes.Name("Release"), "1.0");
-            mainAttributes.put(new Attributes.Name("Build-Jdk"), System.getProperty("java.version"));
-            mainAttributes.put(new Attributes.Name("Builddate"), getTimeStr());
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            manifest.write(baos);
-            byte[] bytes = baos.toByteArray();
-            return new ByteArrayInputStream(bytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 

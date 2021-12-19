@@ -20,7 +20,7 @@ def cus = '../../../mservice-cosmic/lib/cus'
 def wrapper = './gradle/wrapper'
 
 repositories {
-    maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+    maven { url "https://maven.aliyun.com/nexus/content/groups/public/" }
     mavenCentral()
 }
 // 依赖
@@ -30,9 +30,9 @@ dependencies {
     implementation fileTree(dir: biz, include: '*.jar')
     implementation fileTree(dir: cus, include: '*.jar')
     implementation fileTree(dir: wrapper, include: '*.*')
-    implementation 'cn.hutool:hutool-all:5.7.9'
-    implementation 'com.github.adedayo.intellij.sdk:java-decompiler-engine:142.1'
-    implementation 'org.jd:jd-core:1.1.3'
+    implementation 'cn.hutool:hutool-all:latest.release'
+    implementation 'com.github.adedayo.intellij.sdk:java-decompiler-engine:latest.release'
+    implementation 'org.jd:jd-core:latest.release'
 }
 
 // 定义任务

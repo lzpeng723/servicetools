@@ -8,6 +8,8 @@ import kd.bos.dataentity.entity.DynamicObject;
 import kd.bos.dataentity.entity.DynamicObjectCollection;
 import kd.bos.dataentity.metadata.dynamicobject.DynamicObjectType;
 import kd.bos.entity.MainEntityType;
+import kd.bos.entity.cache.AppCache;
+import kd.bos.entity.cache.IAppCache;
 import kd.bos.fileservice.BatchDownloadRequest;
 import kd.bos.fileservice.FileItem;
 import kd.bos.fileservice.FileService;
@@ -20,6 +22,7 @@ import kd.bos.servicehelper.BusinessDataServiceHelper;
 import kd.bos.servicehelper.MetadataServiceHelper;
 import kd.bos.servicehelper.QueryServiceHelper;
 import kd.bos.servicehelper.operation.SaveServiceHelper;
+import kd.bos.url.UrlService;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -42,6 +45,16 @@ public class AttachmentUtils {
      * 附件详情单据标识
      */
     private static final String BOS_ATTACHMENT_ENTITY = "bos_attachment";
+
+    /**
+     * 临时附件URL
+     */
+    private static final String TEMP_ATTACHMENT_URL = "TEMP_ATTACHMENT_URL";
+
+    /**
+     * 应用缓存
+     */
+    private static final IAppCache appCache = AppCache.get(AttachmentUtils.class.getName());
 
     /**
      * 复制附件
@@ -302,8 +315,31 @@ public class AttachmentUtils {
      * @return 文件下载的URL地址
      */
     public static String download(String fileName, InputStream in) {
-        TempFileCache cache = CacheFactory.getCommonCacheFactory().getTempFileCache();
-        return cache.saveAsUrl(fileName, in, 2 * 60);
+        try {
+            int available = in.available();
+            Runtime runtime = Runtime.getRuntime();
+            long maxMemory = runtime.maxMemory();
+            long totalMemory = runtime.totalMemory();
+            long freeMemory = runtime.freeMemory();
+            if (available * 2L < maxMemory - totalMemory + freeMemory) {
+                // 如果流的大小小于剩余内存的一半
+                TempFileCache cache = CacheFactory.getCommonCacheFactory().getTempFileCache();
+                return cache.saveAsUrl(fileName, in, 2 * 60);
+            } else {
+                String attachmentUrl = appCache.get(TEMP_ATTACHMENT_URL, String.class);
+                if (attachmentUrl != null && !attachmentUrl.isEmpty()) {
+                    FileService attachmentFileService = FileServiceFactory.getAttachmentFileService();
+                    attachmentFileService.delete(attachmentUrl);
+                }
+                attachmentUrl = upload(fileName, in);
+                appCache.put(TEMP_ATTACHMENT_URL, attachmentUrl);
+                attachmentUrl = UrlService.getAttachmentFullUrl(attachmentUrl);
+                return attachmentUrl;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**

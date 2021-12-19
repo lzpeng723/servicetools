@@ -1,6 +1,7 @@
 package kd.lzp.servicetools.servicehelper;
 
 import kd.bos.dataentity.TypesContainer;
+import kd.bos.exception.KDBizException;
 import kd.bos.instance.Instance;
 
 import java.util.Map;
@@ -59,7 +60,7 @@ public class ServiceFactory {
         String className = serviceMap.get(serviceName);
         if (className == null) {
             String appName = Instance.getAppName();
-            throw new RuntimeException(String.format("%s对应的服务实现在%s未找到", serviceName, appName));
+            throw new KDBizException(String.format("%s对应的服务实现在%s未找到", serviceName, appName));
         } else {
             return (T) TypesContainer.getOrRegisterSingletonInstance(className);
         }

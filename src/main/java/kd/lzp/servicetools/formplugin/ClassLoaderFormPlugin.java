@@ -7,6 +7,7 @@ import kd.bos.form.events.AfterDoOperationEventArgs;
 import kd.bos.form.plugin.AbstractFormPlugin;
 import kd.bos.servicehelper.DispatchServiceHelper;
 import kd.bos.url.UrlService;
+import kd.bos.util.StringUtils;
 import kd.bos.web.actions.MetadataAction;
 import kd.lzp.servicetools.servicehelper.ClassService;
 import kd.lzp.servicetools.servicehelper.ServiceFactory;
@@ -54,7 +55,7 @@ public class ClassLoaderFormPlugin extends AbstractFormPlugin {
         String className = (String) this.getModel().getValue("lzp_class_name");
         DynamicObject executeApp = (DynamicObject) this.getModel().getValue("lzp_execute_app");
         String appId = executeApp.getString("number");
-        Map<String, Object> classInfoMap = DispatchServiceHelper.invokeService(kd.lzp.servicetools.servicehelper.ServiceFactory.class.getPackage().getName(), appId, ClassService.class.getSimpleName(), "getManifestInfo", className);
+        Map<String, Object> classInfoMap = DispatchServiceHelper.invokeService(ServiceFactory.class.getPackage().getName(), appId, ClassService.class.getSimpleName(), "getManifestInfo", className);
         if (classInfoMap != null) {
             this.getModel().setValue("lzp_execute_name", classInfoMap.get("APP_NAME"));
             String manifestStr = (String) classInfoMap.get("manifestStr");
@@ -77,10 +78,11 @@ public class ClassLoaderFormPlugin extends AbstractFormPlugin {
      */
     private void downloadJar() {
         String className = (String) getModel().getValue("lzp_class_name");
+        className = StringUtils.trim(className);
         DynamicObject executeApp = (DynamicObject) getModel().getValue("lzp_execute_app");
         String appId = executeApp.getString("number");
         String appName = executeApp.getString("name");
-        Map<String, Object> classInfoMap = DispatchServiceHelper.invokeService(kd.lzp.servicetools.servicehelper.ServiceFactory.class.getPackage().getName(), appId, ClassService.class.getSimpleName(), "downloadJarFile", new Object[]{className});
+        Map<String, Object> classInfoMap = DispatchServiceHelper.invokeService(ServiceFactory.class.getPackage().getName(), appId, ClassService.class.getSimpleName(), "downloadJarFile", new Object[]{className});
         if (classInfoMap != null) {
             Object mServiceName = classInfoMap.get("APP_NAME");
             getModel().setValue("lzp_execute_name", mServiceName);
