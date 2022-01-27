@@ -1,16 +1,16 @@
-name: Sync Github Repos To Gitee
+name: Sync Github Repos To Myliving
 on: push
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-    - name: Sync Github Repos To Gitee  # 名字随便起
+    - name: Sync Github Repos To Myliving  # 名字随便起
       uses: Yikun/hub-mirror-action@master  # 使用Yikun/hub-mirror-action
       with:
         src: github/lzpeng723  # 源端账户名(github)
         dst: myliving.top:58080/lzpeng723  # 目的端账户名(myliving.top)
         dst_key: ${{ secrets.KD_MYLIVING_PRIVATE_KEY }}  # SSH密钥对中的私钥
-        dst_token:  ${{ secrets.KD_MYLIVING_TOKEN }}  # Gitee账户的私人令牌
+        dst_token:  ${{ secrets.KD_MYLIVING_TOKEN }}  # Myliving账户的私人令牌
         account_type: user  # 账户类型
         clone_style: "http"  # 使用http方式进行clone，也可以使用ssh
         debug: true  # 启用后会显示所有执行命令
