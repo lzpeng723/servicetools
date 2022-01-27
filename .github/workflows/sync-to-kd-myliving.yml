@@ -8,7 +8,7 @@ jobs:
       uses: Yikun/hub-mirror-action@master  # 使用Yikun/hub-mirror-action
       with:
         src: github/lzpeng723  # 源端账户名(github)
-        dst: myliving.top:58022/lzpeng723  # 目的端账户名(myliving.top)
+        dst: myliving.top/lzpeng723  # 目的端账户名(myliving.top)
         dst_key: ${{ secrets.KD_MYLIVING_PRIVATE_KEY }}  # SSH密钥对中的私钥
         dst_token:  ${{ secrets.KD_MYLIVING_TOKEN }}  # Myliving账户的私人令牌
         account_type: user  # 账户类型
